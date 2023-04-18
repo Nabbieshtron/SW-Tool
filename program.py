@@ -2,8 +2,6 @@ import re
 from itertools import groupby
 
 import pygame
-from PIL import Image as Img
-
 import image
 
 
@@ -136,7 +134,7 @@ class Program:
                     sub_value["sv_6"] += value
                 if substat.lower() == "cridmg" and flag is True:
                     sub_default_value = 7
-                    sub_value["sv"] += value
+                    sub_value["sv_7"] += value
                 if (
                     substat.lower() in ("atk", "hp", "def", "resistance", "accuracy")
                     and flag is True
@@ -267,15 +265,16 @@ class Program:
             croped_image, [rect.rect for rect in self.rects.values()]
         )
 
-        # Resize images
+        # Resize images for blit
         images = image.resize_multiple_images(
             images, [rect.default_rect.size for rect in self.rects.values()]
         )
+
         # Calculates the total width and height of images
         total_size = image.get_total_image_size(images[3:])
 
         # Creating new image and stiching together to minimize performance time
-        new_img = Img.new("RGB", total_size, self.bg_color)
+        new_img = image.new_image("RGB", total_size, self.bg_color)
         new_img = image.stich_multiple_image(new_img, images[3:])
 
         text_inate = ""

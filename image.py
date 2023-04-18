@@ -1,5 +1,6 @@
 from PIL import ImageGrab
 from PIL import Image
+from PIL import ImageOps
 from pytesseract import pytesseract
 import pygame
 
@@ -55,6 +56,14 @@ def convert_surface_to_pil(surface):
     return Image.frombytes("RGBA", surface.get_size(), pil_string_image)
 
 
+def new_image(mode, size: tuple, color):
+    return Image.new(mode, size, color)
+
+
 def get_image_text(image):
     """Returns a text of image object"""
+    # x, y = image.size
+    # ratio = (x / y) * 2
+    # image = image.resize((round(x * ratio), round(y * ratio)))
+    image = ImageOps.invert(image)
     return pytesseract.image_to_string(image)
