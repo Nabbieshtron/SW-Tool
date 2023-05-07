@@ -38,8 +38,10 @@ class Event_handler:
             if button == 1:
                 if self.app_handler.main_menu.buttons["button_set"].collision_check():
                     self.app_handler.set_status(App_handler.status.INAPP)
-                    self.app_handler.program.rects = self.app_handler.main_menu.rects
-                    self.app_handler.program.window_rect = pygame.Rect(
+                    self.app_handler.program.image.rects = (
+                        self.app_handler.main_menu.rects
+                    )
+                    self.app_handler.program.image.window_rect = pygame.Rect(
                         *window.get_size()
                     )
                     self.display_handler.set_display_mode()
