@@ -15,7 +15,7 @@ class Main_menu:
 
         # Button
         self.elevation = 6
-        self.button_font = pygame.font.SysFont("Ariel", 30)
+        self.button_font = pygame.font.SysFont("Arial", 30)
 
         self.rects = {}
 

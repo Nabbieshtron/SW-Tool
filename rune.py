@@ -10,7 +10,7 @@ class Rune:
 
         # Font
         self.font = pygame.font.SysFont("Arial", 35)
-        self.title_font = pygame.font.SysFont("Ariel", 35)
+        self.title_font = pygame.font.SysFont("Arial", 35)
         self.font_color = (182, 165, 112)
 
         # Rendered text
@@ -40,14 +40,6 @@ class Rune:
             self.render_data[key] = self.title_font.render(
                 " ".join(self.rune_data[key]), True, self.font_color
             )
-
-        for name, value in self.rune_data["subs"]:
-            if name == "F_Hp":
-                name = "HP"
-            elif name == "F_Def":
-                name = "DEF"
-            elif name == "F_Atk":
-                name = "ATK"
 
         self.render_data["subs"] = self.font.render(
             "\n".join(n + " " + v for n, v in self.rune_data["subs"]).strip(),
@@ -122,20 +114,11 @@ class Rune:
                 len(self.rune_data["name"]) + len(self.rune_data["main"]) :
             ]
 
-            # Changin name for flat sub-stats for easier detection
             output = []
             new = ""
             for el in self.rune_data["subs"]:
                 if "+" in el:
-                    if "%" not in el and new.lower().strip() != "spd":
-                        new = new.lower().strip()
-                        if new == "hp":
-                            new = "F_Hp"
-                        elif new == "def":
-                            new = "F_Def"
-                        else:
-                            new = "F_Atk"
-
+                    if "%" not in el:
                         output.append([new, el])
                         new = ""
                     else:

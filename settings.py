@@ -10,7 +10,7 @@ class Settings:
 
         # Button
         self.elevation = 6
-        self.font = pygame.font.SysFont("Ariel", 30)
+        self.font = pygame.font.SysFont("Arial", 30)
 
         self.buttons = {
             "game_asset_type": button.Button(

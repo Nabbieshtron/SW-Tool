@@ -36,10 +36,15 @@ class Main:
                     self.event_handler.key_down(event.key)
                 if event.type == pygame.MOUSEBUTTONUP:
                     self.event_handler.mouse_button_up(event.button)
+
             self.app_handler.update()
+            print("ahu")
             self.display.update()
+            print("du")
             pygame.display.update()
+            print("display update")
             self.clock.tick(60)
+            print("fps")
 
 
 if __name__ == "__main__":

@@ -58,17 +58,20 @@ class Efficiency:
     def roll_efficiency(self, data):
         output = []
         try:
-            for el_1, el_2 in data:
-                el_1, el_2 = el_1.strip().lower(), el_2.strip()
-                el_2 = int(el_2.replace("%", "").replace("+", ""))
+            for sub_name, sub_value in data:
+                sub_name, sub_value = sub_name.strip().lower(), sub_value.strip()
+                if not all(x in sub_value for x in ("+", "%")) and sub_name != "spd":
+                    sub_name = f"f_{sub_name}"
+
+                sub_value = int(sub_value.replace("%", "").replace("+", ""))
                 f = 0
-                if el_1 in self.default_values:
+                if sub_name in self.default_values:
                     # Calculates efficiency value
-                    f = ((el_2 / self.default_values[el_1][1]) * 100) - 100
+                    f = ((sub_value / self.default_values[sub_name][1]) * 100) - 100
                     # checks if value negative
                     if f < 0:
                         f = 0
-                output.append([el_1, round(f)])
+                output.append([sub_name, round(f)])
             return output
         except ValueError:
             return []
@@ -92,44 +95,39 @@ class Efficiency:
         total_rolls = 0 - len(self.rune_data["subs"])
         highest_grade = None
         lowest_grade = None
-        try:
-            # Modifying data for use
-            rune_data = [
-                [y, int(x.replace("%", "").replace("+", ""))]
-                for y, x in self.rune_data["subs"]
-            ]
 
-            for name, value in rune_data:
-                try:
-                    # Calculating roll number
-                    roll_num = ceil(value / self.default_values[name.lower()][1])
-                    # Modifying to get efficieny of lowest values
-                    new_data.append(
-                        [
-                            name,
-                            "+"
-                            + str(roll_num * self.default_values[name.lower()][0])
-                            + "%",
-                        ]
-                    )
+        for sub_name, sub_value in self.rune_data["subs"]:
+            sub_name = sub_name.lower().strip()
+            name = sub_name
+            if not all(x in sub_value for x in ("+", "%")) and name != "spd":
+                name = f"f_{name}"
 
-                    total_rolls += roll_num
-                except KeyError:
-                    pass
+            try:
+                sub_value = int(sub_value.replace("%", "").replace("+", ""))
+                # Calculating roll number
+                roll_num = ceil(sub_value / self.default_values[name][1])
+            except KeyError or ValueError:
+                roll_num = 1
+            # Modifying to get efficieny of lowest values
 
-            # Highest estimated possible Grade
-            highest_grade = check_grade(total_rolls * 100)
-            # Lowest estimated possible Grade
+            try:
+                v = [sub_name, f"+{str(roll_num * self.default_values[name][0])}%"]
+                if name in ("spd", "f_atk", "f_hp", "f_def"):
+                    v[1] = v[1].replace("%", "")
+                new_data.append(v)
+            except KeyError:
+                pass
+            total_rolls += roll_num
+        # Highest estimated possible Grade
+        highest_grade = check_grade(total_rolls * 100)
+        # Lowest estimated possible Grade
+        f = self.roll_efficiency(new_data)
 
-            f = self.roll_efficiency(new_data)
-            total_rolls = sum([a[-1] for a in f])
-            lowest_grade = check_grade(total_rolls)
+        total_rolls = sum([a[-1] for a in f])
+        lowest_grade = check_grade(total_rolls)
 
-            self.grades["el_grade"] = lowest_grade
-            self.grades["eh_grade"] = highest_grade
-        except IndexError or ValueError:
-            self.grades["el_grade"] = None
-            self.grades["eh_grade"] = None
+        self.grades["el_grade"] = lowest_grade
+        self.grades["eh_grade"] = highest_grade
 
         # Adds all efficiency of substats
         sub_total = sum([x[-1] for x in self.ref])
