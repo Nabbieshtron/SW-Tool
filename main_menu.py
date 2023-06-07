@@ -1,6 +1,7 @@
 from pygame.locals import Rect
 import pygame
 import button
+import constants
 import rects
 import win32gui
 import win32con
@@ -12,10 +13,6 @@ class Main_menu:
         self.bg_color: tuple[int] = (168, 148, 95)
         self.show = "show"
         self.state = "rune"
-
-        # Button
-        self.elevation = 6
-        self.button_font = pygame.font.SysFont("Arial", 30)
 
         self.rects = {}
 
@@ -33,33 +30,34 @@ class Main_menu:
             "sub_rect": rects.Rects(Rect(120, 0, 330, 140)),
         }
 
-        self.buttons = {
+        # Buttons
+        self.BUTTONS = {
             "button_set": button.Button(
                 "#475F77",
                 "#354B5E",
                 "Set",
-                self.button_font,
+                constants.BUTTON_FONT,
                 (5, 16),
                 (100, 35),
-                self.elevation,
+                constants.ELEVATION,
             ),
             "button_settings": button.Button(
                 "#475F77",
                 "#354B5E",
                 "Settings",
-                self.button_font,
+                constants.BUTTON_FONT,
                 (5, 70),
                 (100, 35),
-                self.elevation,
+                constants.ELEVATION,
             ),
             "button_exit": button.Button(
                 "#475F77",
                 "#354B5E",
                 "Exit",
-                self.button_font,
+                constants.BUTTON_FONT,
                 (5, 125),
                 (100, 35),
-                self.elevation,
+                constants.ELEVATION,
             ),
         }
 
@@ -120,13 +118,13 @@ class Main_menu:
         pygame.draw.rect(screen, self.transparency_color, rects.Rects.transparent_rect)
 
         # Button
-        self.buttons["button_set"].button_effects()
-        self.buttons["button_settings"].button_effects()
-        self.buttons["button_exit"].button_effects()
+        constants.BUTTONS["button_set"].button_effects()
+        constants.BUTTONS["button_settings"].button_effects()
+        constants.BUTTONS["button_exit"].button_effects()
 
-        self.buttons["button_set"].draw(screen)
-        self.buttons["button_settings"].draw(screen)
-        self.buttons["button_exit"].draw(screen)
+        constants.BUTTONS["button_set"].draw(screen)
+        constants.BUTTONS["button_settings"].draw(screen)
+        constants.BUTTONS["button_exit"].draw(screen)
 
         if self.show == "show":
             if self.state == "rune":

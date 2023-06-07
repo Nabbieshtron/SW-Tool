@@ -1,7 +1,8 @@
+from enum import Enum
+
 from main_menu import Main_menu
 from program import Program
 from settings import Settings
-from enum import Enum
 
 
 class App_handler:

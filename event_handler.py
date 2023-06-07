@@ -1,6 +1,7 @@
 from app_handler import App_handler
 import window
 import pygame
+import constants
 import sys
 
 
@@ -36,7 +37,7 @@ class Event_handler:
     def mouse_button_up(self, button):
         if self.app_handler.status == App_handler.status.MENU:
             if button == 1:
-                if self.app_handler.main_menu.buttons["button_set"].collision_check():
+                if constants.BUTTONS["button_set"].collision_check():
                     self.app_handler.set_status(App_handler.status.INAPP)
                     self.app_handler.program.image.rects = (
                         self.app_handler.main_menu.rects
@@ -45,14 +46,10 @@ class Event_handler:
                         *window.get_size()
                     )
                     self.display_handler.set_display_mode()
-                elif self.app_handler.main_menu.buttons[
-                    "button_settings"
-                ].collision_check():
+                elif constants.BUTTONS["button_settings"].collision_check():
                     self.app_handler.set_status(App_handler.status.SETTINGS)
                     self.display_handler.set_display_mode()
-                elif self.app_handler.main_menu.buttons[
-                    "button_exit"
-                ].collision_check():
+                elif constants.BUTTONS["button_exit"].collision_check():
                     pygame.quit()
                     sys.exit()
         elif self.app_handler.status == App_handler.status.SETTINGS:

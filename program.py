@@ -1,7 +1,9 @@
 import pygame
 from pytesseract import pytesseract
+
 from image import Image
 from rune import Rune
+from artifact import Artifact
 
 
 class Program:
