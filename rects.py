@@ -7,8 +7,6 @@ class Rects:
 
     def __init__(self, rect):
         self.flag = True
-        self.color = (153, 109, 38)
-
         self.rect = rect
         self.default_rect = rect
         self.rect_ratio = self.get_ratio_list()
@@ -37,5 +35,5 @@ class Rects:
             self.rect.h + (self.rect.top - self.transparent_rect.top) - 2,
         )
 
-    def draw(self, surface):
-        pygame.draw.rect(surface, self.color, self.rect, 2)
+    def draw(self, surface, color):
+        pygame.draw.rect(surface, color, self.rect, 2)

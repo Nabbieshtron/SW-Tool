@@ -1,5 +1,6 @@
 from app_handler import App_handler
 import pygame
+import constants
 
 
 class Display_handler:
@@ -9,19 +10,26 @@ class Display_handler:
         self.set_display_mode()
 
     def set_display_mode(self):
+        # Main menu
         if self.app_handler.status == App_handler.status.MENU:
-            self.screen = pygame.display.set_mode((600, 360), pygame.RESIZABLE)
+            self.screen = pygame.display.set_mode(
+                constants.DISPLAY_MAIN_MENU, pygame.RESIZABLE
+            )
+        # Main menu > Settings
+        elif self.app_handler.status == App_handler.status.SETTINGS:
+            self.screen = pygame.display.set_mode(constants.DISPLAY_SETTINGS)
+        # Set ('rune' in settings)
         elif (
             self.app_handler.status == App_handler.status.INAPP
             and self.app_handler.main_menu.state == "rune"
-            or self.app_handler.status == App_handler.status.SETTINGS
         ):
-            self.screen = pygame.display.set_mode((600, 600))
+            self.screen = pygame.display.set_mode(constants.DISPLAY_RUNE)
+        # Set ('artifact' in settings)
         elif (
             self.app_handler.status == App_handler.status.INAPP
             and self.app_handler.main_menu.state == "artifact"
         ):
-            self.screen = pygame.display.set_mode((900, 400))
+            self.screen = pygame.display.set_mode(constants.DISPLAY_ARTIFACT)
 
     def update(self):
         if self.app_handler.status == App_handler.status.MENU:

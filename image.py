@@ -6,7 +6,7 @@ from PIL import ImageOps as PilIo
 class Image:
     def __init__(self):
         self.window_rect = None
-        self.rect = None
+        self.rects = None
         # One image of data
         self.img = None
         # Multiple images of data
@@ -64,15 +64,3 @@ class Image:
             new_img.paste(img, (0, current_height))
             current_height += img.size[1]
         return new_img
-
-    # def convert_pil_to_surface(self, pil_image):
-    #     return pygame.image.fromstring(
-    #         pil_image.tobytes(), pil_image.size, pil_image.mode
-    #     )
-
-    # def convert_pils_to_surfaces(self, pil_image: list):
-    #     return [self.convert_pil_to_surface(image) for image in pil_image]
-
-    # def convert_surface_to_pil(surface):
-    #     pil_string_image = pygame.image.tostring(surface, "RGBA", False)
-    #     return Image.frombytes("RGBA", surface.get_size(), pil_string_image)

@@ -1,7 +1,6 @@
 from app_handler import App_handler
 import window
 import pygame
-import constants
 import sys
 
 
@@ -37,7 +36,7 @@ class Event_handler:
     def mouse_button_up(self, button):
         if self.app_handler.status == App_handler.status.MENU:
             if button == 1:
-                if constants.BUTTONS["button_set"].collision_check():
+                if self.app_handler.main_menu.BUTTONS["set"].collision_check():
                     self.app_handler.set_status(App_handler.status.INAPP)
                     self.app_handler.program.image.rects = (
                         self.app_handler.main_menu.rects
@@ -46,18 +45,16 @@ class Event_handler:
                         *window.get_size()
                     )
                     self.display_handler.set_display_mode()
-                elif constants.BUTTONS["button_settings"].collision_check():
+                elif self.app_handler.main_menu.BUTTONS["settings"].collision_check():
                     self.app_handler.set_status(App_handler.status.SETTINGS)
                     self.display_handler.set_display_mode()
-                elif constants.BUTTONS["button_exit"].collision_check():
+                elif self.app_handler.main_menu.BUTTONS["exit"].collision_check():
                     pygame.quit()
                     sys.exit()
         elif self.app_handler.status == App_handler.status.SETTINGS:
             if button == 1:
-                if self.app_handler.settings.buttons[
-                    "game_asset_type"
-                ].collision_check():
-                    self.app_handler.settings.buttons["game_asset_type"].clicked = True
+                if self.app_handler.settings.buttons["asset_type"].collision_check():
+                    self.app_handler.settings.buttons["asset_type"].clicked = True
                 elif self.app_handler.settings.buttons[
                     "hide_or_show"
                 ].collision_check():
@@ -66,10 +63,8 @@ class Event_handler:
                     "apply_changes"
                 ].collision_check():
                     self.app_handler.settings.changes[
-                        "game_asset_type"
-                    ] = self.app_handler.settings.buttons[
-                        "game_asset_type"
-                    ].text.lower()
+                        "asset_type"
+                    ] = self.app_handler.settings.buttons["asset_type"].text.lower()
                     self.app_handler.settings.changes[
                         "hide_or_show"
                     ] = self.app_handler.settings.buttons["hide_or_show"].text.lower()

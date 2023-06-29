@@ -1,60 +1,28 @@
 import pygame
+from constants import (
+    IN_APP_FONT,
+    IN_APP_TEXT_COLOR,
+    RUNE_SETS,
+    RUNE_QUALITY_BG_COLORS,
+    DEFAULT_RUNE_QUALITY,
+    IN_APP_GRID,
+    DISPLAY_RUNE,
+)
 from efficiency import Efficiency as Ef
 
 
 class Rune:
     def __init__(self):
         self.efficiency = Ef()
+        self.font = IN_APP_FONT
         # Tesseract data
         self.rune_data = {}
-
-        # Font
-        self.font = pygame.font.SysFont("Arial", 35)
-        self.title_font = pygame.font.SysFont("Arial", 35)
-        self.font_color = (182, 165, 112)
 
         # Rendered text
         self.render_data = {"subs": "", "roll_eff": ""}
 
         # Rect
         self.rect_data = {"subs": "", "roll_eff": ""}
-
-        self.sets = [
-            "energy",
-            "guard",
-            "endure",
-            "blade",
-            "fatal",
-            "swift",
-            "despair",
-            "rage",
-            "focus",
-            "vampire",
-            "violent",
-            "nemesis",
-            "will",
-            "shield",
-            "revenge",
-            "destroy",
-            "fight",
-            "determination",
-            "enchance",
-            "accuracy",
-            "tolerance",
-        ]
-
-        self.grid = {
-            "level": pygame.Rect(0, 150, 70, 70),
-            "slot": pygame.Rect(0, 218, 70, 70),
-            "rune_eff": pygame.Rect(0, 286, 70, 70),
-            "none": pygame.Rect(0, 354, 70, 70),
-            "el_grade": pygame.Rect(0, 112, 198, 40),
-            "eh_grade": pygame.Rect(196, 112, 202, 40),
-            "sub_grade": pygame.Rect(396, 112, 204, 40),
-            "grinds": pygame.Rect(396, 150, 104, 274),
-            "roll_eff": pygame.Rect(498, 150, 102, 274),
-        }
-        self.screen_rect = pygame.Rect(0, 0, 600, 600)
 
     def render(self):
         # Cleaning for a loop
@@ -63,8 +31,8 @@ class Rune:
 
         # Level, slot, name, main
         for key in ("level", "slot", "name", "main"):
-            self.render_data[key] = self.title_font.render(
-                " ".join(self.rune_data[key]), True, self.font_color
+            self.render_data[key] = self.font.render(
+                " ".join(self.rune_data[key]), True, IN_APP_TEXT_COLOR
             )
         # Rune substats
         self.render_data["subs"] = self.font.render(
@@ -72,7 +40,7 @@ class Rune:
                 n + " " + v for n, v in [x[:-1] for x in self.rune_data["subs"]]
             ).strip(),
             True,
-            self.font_color,
+            IN_APP_TEXT_COLOR,
         )
         # Rune grinds
         self.font.align = pygame.FONT_CENTER
@@ -81,7 +49,7 @@ class Rune:
                 v.replace("+", "") for v in [x[-1] for x in self.rune_data["subs"]]
             ).strip(),
             True,
-            self.font_color,
+            IN_APP_TEXT_COLOR,
         )
         # Roll efficiency
         self.render_data["roll_eff"] = self.font.render(
@@ -89,14 +57,14 @@ class Rune:
                 str(round(value)) + "%" for value in self.efficiency.ref.values()
             ),
             True,
-            self.font_color,
+            IN_APP_TEXT_COLOR,
         )
 
         # Rune efficiency
         self.render_data["rune_eff"] = (
-            self.font.render(self.efficiency.rune_eff, True, self.font_color)
+            self.font.render(self.efficiency.rune_eff, True, IN_APP_TEXT_COLOR)
             if 12 <= int(self.rune_data["level"][0]) <= 15
-            else self.font.render("N", True, self.font_color)
+            else self.font.render("N", True, IN_APP_TEXT_COLOR)
         )
 
     def creating_rect(self):
@@ -106,15 +74,13 @@ class Rune:
         # Level, slot
         for key in ("level", "slot"):
             self.rect_data[key] = self.render_data[key].get_rect(
-                center=self.grid[key].center
+                center=IN_APP_GRID[key].center
             )
 
         # Name, main
         y = 20
         for key in ("name", "main"):
-            self.rect_data[key] = self.render_data[key].get_rect(
-                midtop=(self.screen_rect.centerx, y)
-            )
+            self.rect_data[key] = self.render_data[key].get_rect(midtop=(300, y))
             y += 40
 
         # Rune substats
@@ -122,17 +88,17 @@ class Rune:
 
         # Rune grinds
         self.rect_data["grinds"] = self.render_data["grinds"].get_rect(
-            midtop=(self.grid["grinds"].centerx, self.rect_data["subs"].top)
+            midtop=(IN_APP_GRID["grinds"].centerx, self.rect_data["subs"].top)
         )
 
         # Roll efficiency
         self.rect_data["roll_eff"] = self.render_data["roll_eff"].get_rect(
-            midtop=(self.grid["roll_eff"].centerx, self.rect_data["subs"].top)
+            midtop=(IN_APP_GRID["roll_eff"].centerx, self.rect_data["subs"].top)
         )
 
         # Rune efficiency
         self.rect_data["rune_eff"] = self.render_data["rune_eff"].get_rect(
-            center=self.grid["rune_eff"].center
+            center=IN_APP_GRID["rune_eff"].center
         )
 
     def preparing_data(self, data):
@@ -154,7 +120,7 @@ class Rune:
 
             # Set
             name = [x.lower() for x in self.rune_data["name"]]
-            for rune_set in self.sets:
+            for rune_set in RUNE_SETS:
                 if rune_set in name:
                     self.rune_data["set"] = [rune_set]
                     break
@@ -224,26 +190,26 @@ class Rune:
             surface.blit(self.render_data[key], self.rect_data[key])
 
         # Border Lines
-        pygame.draw.rect(surface, "White", self.screen_rect, 2, 1)
+        pygame.draw.rect(surface, "White", pygame.Rect((0, 0), DISPLAY_RUNE), 2, 1)
         # Side grid
-        for key in self.grid:
-            pygame.draw.rect(surface, "White", self.grid[key], 2, 1)
+        for key in IN_APP_GRID:
+            pygame.draw.rect(surface, "White", IN_APP_GRID[key], 2, 1)
 
         for key, value in self.efficiency.grades.items():
             if value:
                 pygame.draw.rect(
                     surface,
-                    self.efficiency.BG_COLORS[value],
-                    self.grid[key],
+                    RUNE_QUALITY_BG_COLORS[value],
+                    IN_APP_GRID[key],
                 )
                 surface.blit(
-                    self.efficiency.DEFAULT_GRADES[value],
-                    self.efficiency.DEFAULT_GRADES[value].get_rect(
-                        center=self.grid[key].center
+                    DEFAULT_RUNE_QUALITY[value],
+                    DEFAULT_RUNE_QUALITY[value].get_rect(
+                        center=IN_APP_GRID[key].center
                     ),
                 )
             # Top grid
-            pygame.draw.rect(surface, "White", self.grid[key], 2)
+            pygame.draw.rect(surface, "White", IN_APP_GRID[key], 2)
 
-        pygame.draw.rect(surface, "White", self.grid["grinds"], 2, 1)
-        pygame.draw.rect(surface, "White", self.grid["roll_eff"], 2, 1)
+        pygame.draw.rect(surface, "White", IN_APP_GRID["grinds"], 2, 1)
+        pygame.draw.rect(surface, "White", IN_APP_GRID["roll_eff"], 2, 1)

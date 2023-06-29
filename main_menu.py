@@ -1,70 +1,36 @@
-from pygame.locals import Rect
 import pygame
-import button
-import constants
-import rects
-import win32gui
-import win32con
 import win32api
+import win32con
+import win32gui
+
+import constants
+from rects import Rects
+from button import Button
 
 
 class Main_menu:
     def __init__(self):
-        self.bg_color: tuple[int] = (168, 148, 95)
         self.show = "show"
         self.state = "rune"
 
-        self.rects = {}
-
         self.rune_rects = {
-            "title_rect": rects.Rects(Rect(170, 20, 360, 50)),
-            "main_rect": rects.Rects(Rect(210, 0, 200, 50)),
-            "inate_rect": rects.Rects(Rect(210, 0, 200, 45)),
-            "sub_rect": rects.Rects(Rect(120, 0, 200, 130)),
+            key: Rects(value) for key, value in constants.RUNE_RECTS.items()
         }
-
         self.artifact_rects = {
-            "title_rect": rects.Rects(Rect(170, 20, 360, 50)),
-            "main_rect": rects.Rects(Rect(210, 0, 150, 50)),
-            "inate_rect": rects.Rects(Rect(210, 0, 200, 45)),
-            "sub_rect": rects.Rects(Rect(120, 0, 330, 140)),
+            key: Rects(value) for key, value in constants.ARTIFACT_RECTS.items()
         }
 
         # Buttons
         self.BUTTONS = {
-            "button_set": button.Button(
-                "#475F77",
-                "#354B5E",
-                "Set",
-                constants.BUTTON_FONT,
-                (5, 16),
-                (100, 35),
-                constants.ELEVATION,
-            ),
-            "button_settings": button.Button(
-                "#475F77",
-                "#354B5E",
-                "Settings",
-                constants.BUTTON_FONT,
-                (5, 70),
-                (100, 35),
-                constants.ELEVATION,
-            ),
-            "button_exit": button.Button(
-                "#475F77",
-                "#354B5E",
-                "Exit",
-                constants.BUTTON_FONT,
-                (5, 125),
-                (100, 35),
-                constants.ELEVATION,
-            ),
+            key: Button(
+                constants.BUTTON_NAMES[key],
+                constants.BUTTON_POSITIONS[key],
+                constants.BUTTON_SIZE["menu"],
+            )
+            for key in ("set", "settings", "exit")
         }
 
-    @staticmethod
-    def transparent_window():
-        transparency_color = (255, 0, 128)
-
+    def transparent_window(self):
         # Create layered window
         hmwd = pygame.display.get_wm_info()["window"]
         win32gui.SetWindowLong(
@@ -74,10 +40,8 @@ class Main_menu:
         )
         # Set window transparency color
         win32gui.SetLayeredWindowAttributes(
-            hmwd, win32api.RGB(*transparency_color), 0, win32con.LWA_COLORKEY
+            hmwd, win32api.RGB(*constants.TRANSPARENCY_COLOR), 0, win32con.LWA_COLORKEY
         )
-
-        return transparency_color
 
     def update(self):
         if self.state == "rune":
@@ -85,61 +49,40 @@ class Main_menu:
         else:
             self.rects = self.artifact_rects
 
-        # Get current mouse pos
-        self.mouse_pos = button.get_mouse_pos()
-
         # Screen size
         self.width, self.height = pygame.display.get_window_size()
 
-        # Transparent screen
-        rects.Rects.transparent_rect.w = self.width - 120
-        rects.Rects.transparent_rect.h = self.height - 20
+        Rects.transparent_rect.w = self.width - 120
+        Rects.transparent_rect.h = self.height - 20
 
         # Rects
-        self.rects["title_rect"].get_scaled_rect()
+        for key in ("title_rect", "main_rect", "inate_rect", "sub_rect"):
+            self.rects[key].get_scaled_rect()
 
-        self.rects["main_rect"].get_scaled_rect()
         self.rects["main_rect"].rect.top = self.rects["title_rect"].rect.bottom - 2
-
-        self.rects["inate_rect"].get_scaled_rect()
         self.rects["inate_rect"].rect.top = self.rects["main_rect"].rect.bottom - 2
-
-        self.rects["sub_rect"].get_scaled_rect()
         self.rects["sub_rect"].rect.top = self.rects["inate_rect"].rect.bottom - 2
+
+        # Prepare transparent window
+        self.transparent_window()
 
     def draw(self, screen):
         # Fill the surface
-        screen.fill(self.bg_color)
+        screen.fill(constants.BG_COLOR)
 
-        # Make window transparent
-        self.transparency_color: tuple[int] = self.transparent_window()
-
-        # Border filling
-        pygame.draw.rect(screen, self.transparency_color, rects.Rects.transparent_rect)
+        # Draw transparent window
+        pygame.draw.rect(screen, constants.TRANSPARENCY_COLOR, Rects.transparent_rect)
 
         # Button
-        constants.BUTTONS["button_set"].button_effects()
-        constants.BUTTONS["button_settings"].button_effects()
-        constants.BUTTONS["button_exit"].button_effects()
-
-        constants.BUTTONS["button_set"].draw(screen)
-        constants.BUTTONS["button_settings"].draw(screen)
-        constants.BUTTONS["button_exit"].draw(screen)
+        for key in ("set", "settings", "exit"):
+            self.BUTTONS[key].button_effects()
+            self.BUTTONS[key].draw(screen)
 
         if self.show == "show":
             if self.state == "rune":
-                # Rune name, level, slot
-                self.rects["title_rect"].draw(screen)
-                # Main-stat
-                self.rects["main_rect"].draw(screen)
-                # Inate-stat
-                self.rects["inate_rect"].draw(screen)
-                # Sub-stat
-                self.rects["sub_rect"].draw(screen)
+                for key in ("title_rect", "main_rect", "inate_rect", "sub_rect"):
+                    self.rects[key].draw(screen, constants.MENU_BORDER_COLOR)
+
             else:
-                # Artifact name, level
-                self.rects["title_rect"].draw(screen)
-                # Main-stat
-                self.rects["main_rect"].draw(screen)
-                # Sub-stat
-                self.rects["sub_rect"].draw(screen)
+                for key in ("title_rect", "main_rect", "sub_rect"):
+                    self.rects[key].draw(screen, constants.MENU_BORDER_COLOR)
