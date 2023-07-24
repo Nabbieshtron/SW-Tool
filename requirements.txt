@@ -1,6 +1,0 @@
-packaging==21.3
-Pillow==9.5.0
-pyparsing==3.0.9
-pytesseract==0.3.10
-pygame-ce==2.2.1
-pywin32==305
