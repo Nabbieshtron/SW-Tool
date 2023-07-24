@@ -1,5 +1,9 @@
+from enum import Enum
+
 from pygame import font
 from pygame.locals import Rect
+
+STATES = Enum("State", ["MENU", "INAPP", "SETTINGS"])
 
 # Initalize font
 font.init()
@@ -40,23 +44,20 @@ RUNE_QUALITY_BG_COLORS: dict = {
 }
 
 DEFAULT_RUNE_QUALITY: dict = {
-    "magic": RUNE_QUALITY_FONT.render("Magic", True, RUNE_QUALITY_TEXT_COLORS["magic"]),
-    "rare": RUNE_QUALITY_FONT.render("Rare", True, RUNE_QUALITY_TEXT_COLORS["rare"]),
-    "hero": RUNE_QUALITY_FONT.render("Hero", True, RUNE_QUALITY_TEXT_COLORS["hero"]),
-    "legend": RUNE_QUALITY_FONT.render(
-        "Legend", True, RUNE_QUALITY_TEXT_COLORS["legend"]
-    ),
+    key: RUNE_QUALITY_FONT.render(key.capitalize(), True, RUNE_QUALITY_TEXT_COLORS[key])
+    for key in ("magic", "rare", "hero", "legend")
 }
 
 # Buttons core
 ELEVATION: int = 6
 # Width
-BUTTON_WIDTH: dict = {"menu": 100, "settings": 150}
+BUTTON_WIDTH: dict = {"menu": 100, "settings": 150, "eff_multipliers": 70}
 # Height
-BUTTON_HEIGHT: dict = {"menu": 35, "settings": 35}
+BUTTON_HEIGHT: dict = {"menu": 35, "settings": 35, "eff_multipliers": 35}
 # Size
 BUTTON_SIZE: dict = {
-    key: (BUTTON_WIDTH[key], BUTTON_HEIGHT[key]) for key in ("menu", "settings")
+    key: (BUTTON_WIDTH[key], BUTTON_HEIGHT[key])
+    for key in ("menu", "settings", "eff_multipliers")
 }
 
 # Buttons names
@@ -66,6 +67,17 @@ BUTTON_NAMES: dict = {
     "exit": "Exit",
     "asset_type": "Rune",
     "hide_or_show": "Show",
+    "HP_flat": "0.5",
+    "DEF_flat": "0.5",
+    "ATK_flat": "0.5",
+    "HP": "1",
+    "DEF": "1",
+    "ATK": "1",
+    "SPD": "1",
+    "CRI_Rate": "1",
+    "CRI_Damage": "1",
+    "Accuracy": "1",
+    "Resistance": "1",
     "apply_changes": "Apply",
     "cancel_changes": "Cancel",
 }
@@ -75,10 +87,21 @@ BUTTON_POSITIONS: dict = {
     "set": (5, 16),
     "settings": (5, 70),
     "exit": (5, 125),
-    "asset_type": (400, 15),
-    "hide_or_show": (400, 75),
-    "apply_changes": (140, 550),
-    "cancel_changes": (310, 550),
+    "asset_type": (400, 20),
+    "hide_or_show": (400, 80),
+    "apply_changes": (325, 650),
+    "cancel_changes": (525, 650),
+    "HP_flat": (850, 80),
+    "DEF_flat": (850, 130),
+    "ATK_flat": (850, 180),
+    "HP": (850, 230),
+    "DEF": (850, 280),
+    "ATK": (850, 330),
+    "SPD": (850, 380),
+    "CRI_Rate": (850, 430),
+    "CRI_Damage": (850, 480),
+    "Accuracy": (850, 530),
+    "Resistance": (850, 580),
 }
 
 # Rune box position, size in the main_menu
@@ -158,31 +181,54 @@ RUNE_SETS = [
     "tolerance",
 ]
 
-DEFAULT_SYNERGY_SET_SUBS = {
-    "quality": ["spd", "hp", "def", "atk", "accuracy", "resistance", "cri rate"],
-    "damage": ["spd", "cri rate", "cri dmg", "atk"],
-}
-
-DEFAULT_SYNERGY_SLOT = {"quality": {"1": 1}}
-
 # Settings rendered text
 SETTINGS_TEXT_SURFACES: dict = {
-    "assets": SETTINGS_FONT.render("Select game asset", True, "Black"),
-    "navsquares": SETTINGS_FONT.render("Navigation squares", True, "Black"),
+    key: SETTINGS_FONT.render(text, True, "Black")
+    for key, text in [
+        ("assets", "Assets"),
+        ("nav_squares", "Navigation squares"),
+        ("eff_multipliers", "Efficiency multipliers"),
+        ("HP_flat", "HP flat"),
+        ("DEF_flat", "DEF flat"),
+        ("ATK_flat", "ATK flat"),
+        ("HP", "HP"),
+        ("DEF", "DEF"),
+        ("ATK", "ATK"),
+        ("SPD", "SPD"),
+        ("CRI_Rate", "CRI Rate"),
+        ("CRI_Damage", "CRI Damage"),
+        ("Accuracy", "Accuracy"),
+        ("Resistance", "Resistance"),
+    ]
 }
 
 SETTINGS_TEXT_RECTS: dict = {
-    "assets": SETTINGS_TEXT_SURFACES["assets"].get_rect(topleft=(20, 20)),
-    "navsquares": SETTINGS_TEXT_SURFACES["navsquares"].get_rect(topleft=(20, 80)),
+    key: SETTINGS_TEXT_SURFACES[key].get_rect(topleft=pos)
+    for key, pos in [
+        ("assets", (20, 20)),
+        ("nav_squares", (20, 80)),
+        ("eff_multipliers", (650, 20)),
+        ("HP_flat", (650, 75)),
+        ("DEF_flat", (650, 125)),
+        ("ATK_flat", (650, 175)),
+        ("HP", (650, 225)),
+        ("DEF", (650, 275)),
+        ("ATK", (650, 325)),
+        ("SPD", (650, 375)),
+        ("CRI_Rate", (650, 425)),
+        ("CRI_Damage", (650, 475)),
+        ("Accuracy", (650, 525)),
+        ("Resistance", (650, 575)),
+    ]
 }
+
 
 IN_APP_GRID = {
     "level": Rect(0, 150, 70, 70),
     "slot": Rect(0, 218, 70, 70),
     "rune_eff": Rect(0, 286, 70, 70),
     "none": Rect(0, 354, 70, 70),
-    "el_grade": Rect(0, 112, 198, 40),
-    "eh_grade": Rect(196, 112, 202, 40),
+    "rune_grade": Rect(0, 112, 398, 40),
     "sub_grade": Rect(396, 112, 204, 40),
     "grinds": Rect(396, 150, 104, 274),
     "roll_eff": Rect(498, 150, 102, 274),
@@ -190,6 +236,6 @@ IN_APP_GRID = {
 
 # Display size
 DISPLAY_MAIN_MENU: tuple[int] = 600, 360
-DISPLAY_SETTINGS: tuple[int] = 600, 600
+DISPLAY_SETTINGS: tuple[int] = 1000, 700
 DISPLAY_RUNE: tuple[int] = 600, 600
 DISPLAY_ARTIFACT: tuple[int] = 900, 400

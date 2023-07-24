@@ -5,7 +5,7 @@ from pathlib import Path
 import pygame
 from pytesseract import pytesseract
 
-from app_handler import App_handler
+from app_handler import AppHandler
 from display import Display_handler
 from event_handler import Event_handler
 
@@ -20,7 +20,7 @@ class Main:
         pytesseract.tesseract_cmd = str(path_to_tesseract)
         pygame.display.set_caption("Sw Tool")
         self.clock = pygame.time.Clock()
-        self.app_handler = App_handler()
+        self.app_handler = AppHandler()
         self.display = Display_handler(self.app_handler)
         self.event_handler = Event_handler(self.app_handler, self.display)
 

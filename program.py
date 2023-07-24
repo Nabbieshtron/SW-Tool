@@ -1,29 +1,31 @@
+from threading import Thread
+
 from pytesseract import pytesseract
 
+from artifact import Artifact
+from constants import IN_APP_BG_COLOR
 from image import Image
 from rune import Rune
-from artifact import Artifact
-from constants import IN_APP_BG_COLOR, SETTINGS_FONT
 
 
 class Program:
     def __init__(self):
         self.initialize = True
         self.state = "rune"
-        self.match_state = False
+        self.thread_state = False
 
         self.image = Image()
         self.rune = Rune()
 
-        self.old_teseract_data = None
         self.teseract_data = None
 
-    def check_match(self):
-        self.match_state = (
-            True
-            if self.old_teseract_data is None
-            else self.teseract_data != self.old_teseract_data
-        )
+    def get_tesseract_data(self):
+        self.thread_state = True
+        # Converts image to text
+        self.teseract_data: str = pytesseract.image_to_data(
+            self.image.tese_img, output_type="dict"
+        )["text"]
+        self.thread_state = False
 
     def update(self):
         if self.initialize:
@@ -34,20 +36,14 @@ class Program:
         # Process image for use
         self.image.update()
 
-        # Converts image to text
-        self.teseract_data: str = pytesseract.image_to_data(
-            self.image.tese_img, output_type="dict"
-        )["text"]
+        # Threading heavy task to resume even processes
+        if not self.thread_state:
+            Thread(target=self.get_tesseract_data).start()
 
-        # If check for old data is same as new data to save performance
-        self.check_match()
-        if self.match_state:
-            # Update rune data
-            self.rune.update(self.teseract_data)
-            # Saving new data as old
-            self.old_teseract_data = self.teseract_data
+        # Update rune data
+        self.rune.update(self.teseract_data)
 
     def draw(self, surface):
-        if self.state == "rune" and self.match_state:
+        if self.state == "rune":
             surface.fill(IN_APP_BG_COLOR)
             self.rune.draw(surface)

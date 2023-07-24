@@ -1,5 +1,6 @@
 import pygame
 import win32gui
+
 import constants
 
 
@@ -37,8 +38,11 @@ class Button:
             get_mouse_pos()
         ) or self.bottom_rect.collidepoint(get_mouse_pos())
 
-    def button_effects(self):
-        detect_press = pygame.mouse.get_pressed()[0]
+    def button_effects(self, left_click=True, right_click=False):
+        if left_click and not right_click:
+            detect_press = (pygame.mouse.get_pressed()[0],)
+        elif left_click and right_click:
+            detect_press = pygame.mouse.get_pressed()[::2]
 
         # Blinking effect
         self.color1 = (
@@ -48,13 +52,13 @@ class Button:
         )
 
         # Pressing effect
-        if detect_press and not self.pressed:
+        if True in detect_press and not self.pressed:
             self.pressed = True
             self.dynamic_elevation = (
                 0 if self.collision_check() else constants.ELEVATION
             )
 
-        if not detect_press:
+        if not True in detect_press:
             self.pressed = False
             self.dynamic_elevation = constants.ELEVATION
 

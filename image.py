@@ -1,5 +1,5 @@
-from PIL import ImageGrab as PilIg
 from PIL import Image as PilI
+from PIL import ImageGrab as PilIg
 from PIL import ImageOps as PilIo
 
 

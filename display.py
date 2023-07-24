@@ -1,6 +1,12 @@
-from app_handler import App_handler
 import pygame
-import constants
+
+from constants import (
+    DISPLAY_ARTIFACT,
+    DISPLAY_MAIN_MENU,
+    DISPLAY_RUNE,
+    DISPLAY_SETTINGS,
+    STATES,
+)
 
 
 class Display_handler:
@@ -11,30 +17,28 @@ class Display_handler:
 
     def set_display_mode(self):
         # Main menu
-        if self.app_handler.status == App_handler.status.MENU:
-            self.screen = pygame.display.set_mode(
-                constants.DISPLAY_MAIN_MENU, pygame.RESIZABLE
-            )
+        if self.app_handler.status == STATES.MENU:
+            self.screen = pygame.display.set_mode(DISPLAY_MAIN_MENU, pygame.RESIZABLE)
         # Main menu > Settings
-        elif self.app_handler.status == App_handler.status.SETTINGS:
-            self.screen = pygame.display.set_mode(constants.DISPLAY_SETTINGS)
+        elif self.app_handler.status == STATES.SETTINGS:
+            self.screen = pygame.display.set_mode(DISPLAY_SETTINGS)
         # Set ('rune' in settings)
         elif (
-            self.app_handler.status == App_handler.status.INAPP
+            self.app_handler.status == STATES.INAPP
             and self.app_handler.main_menu.state == "rune"
         ):
-            self.screen = pygame.display.set_mode(constants.DISPLAY_RUNE)
+            self.screen = pygame.display.set_mode(DISPLAY_RUNE)
         # Set ('artifact' in settings)
         elif (
-            self.app_handler.status == App_handler.status.INAPP
+            self.app_handler.status == STATES.INAPP
             and self.app_handler.main_menu.state == "artifact"
         ):
-            self.screen = pygame.display.set_mode(constants.DISPLAY_ARTIFACT)
+            self.screen = pygame.display.set_mode(DISPLAY_ARTIFACT)
 
     def update(self):
-        if self.app_handler.status == App_handler.status.MENU:
+        if self.app_handler.status == STATES.MENU:
             self.app_handler.main_menu.draw(self.screen)
-        elif self.app_handler.status == App_handler.status.INAPP:
+        elif self.app_handler.status == STATES.INAPP:
             self.app_handler.program.draw(self.screen)
-        elif self.app_handler.status == App_handler.status.SETTINGS:
+        elif self.app_handler.status == STATES.SETTINGS:
             self.app_handler.settings.draw(self.screen)

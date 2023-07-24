@@ -1,12 +1,13 @@
 import pygame
+
 from constants import (
-    IN_APP_FONT,
-    IN_APP_TEXT_COLOR,
-    RUNE_SETS,
-    RUNE_QUALITY_BG_COLORS,
     DEFAULT_RUNE_QUALITY,
-    IN_APP_GRID,
     DISPLAY_RUNE,
+    IN_APP_FONT,
+    IN_APP_GRID,
+    IN_APP_TEXT_COLOR,
+    RUNE_QUALITY_BG_COLORS,
+    RUNE_SETS,
 )
 from efficiency import Efficiency as Ef
 
@@ -19,14 +20,14 @@ class Rune:
         self.rune_data = {}
 
         # Rendered text
-        self.render_data = {"subs": "", "roll_eff": ""}
+        self.render_data = {}
 
         # Rect
-        self.rect_data = {"subs": "", "roll_eff": ""}
+        self.rect_data = {}
 
     def render(self):
         # Cleaning for a loop
-        self.render_data = {"subs": "", "roll_eff": ""}
+        self.render_data = {}
         self.font.align = pygame.FONT_LEFT
 
         # Level, slot, name, main
@@ -53,23 +54,23 @@ class Rune:
         )
         # Roll efficiency
         self.render_data["roll_eff"] = self.font.render(
-            "\n".join(
-                str(round(value)) + "%" for value in self.efficiency.ref.values()
-            ),
+            "\n".join(str(round(value)) + "%" for value in self.efficiency.rolls),
             True,
             IN_APP_TEXT_COLOR,
         )
 
         # Rune efficiency
-        self.render_data["rune_eff"] = (
-            self.font.render(self.efficiency.rune_eff, True, IN_APP_TEXT_COLOR)
-            if 12 <= int(self.rune_data["level"][0]) <= 15
-            else self.font.render("N", True, IN_APP_TEXT_COLOR)
-        )
+        if self.rune_data["level"][0].isdigit():
+            if 12 <= int(self.rune_data["level"][0]) <= 15:
+                self.render_data["rune_eff"] = self.font.render(
+                    self.efficiency.rune_eff, True, IN_APP_TEXT_COLOR
+                )
+        else:
+            self.render_data["rune_eff"] = self.font.render("", True, IN_APP_TEXT_COLOR)
 
     def creating_rect(self):
         # Cleaning for a loop
-        self.rect_data = {"subs": "", "roll_eff": ""}
+        self.rect_data = {}
 
         # Level, slot
         for key in ("level", "slot"):
@@ -97,9 +98,12 @@ class Rune:
         )
 
         # Rune efficiency
-        self.rect_data["rune_eff"] = self.render_data["rune_eff"].get_rect(
-            center=IN_APP_GRID["rune_eff"].center
-        )
+        try:
+            self.rect_data["rune_eff"] = self.render_data["rune_eff"].get_rect(
+                center=IN_APP_GRID["rune_eff"].center
+            )
+        except KeyError:
+            self.rect_data["rune_eff"] = self.font.render("N", True, IN_APP_TEXT_COLOR)
 
     def preparing_data(self, data):
         try:
@@ -177,13 +181,14 @@ class Rune:
             }
 
     def update(self, data):
-        # Preparing data for use
-        self.preparing_data(data)
-        self.efficiency.update(self.rune_data)
-        # Rendering text
-        self.render()
-        # Creatinging Rect()
-        self.creating_rect()
+        if data:
+            # Preparing data for use
+            self.preparing_data(data)
+            self.efficiency.update(self.rune_data)
+            # Rendering text
+            self.render()
+            # Creatinging Rect()
+            self.creating_rect()
 
     def draw(self, surface):
         for key in self.render_data:
