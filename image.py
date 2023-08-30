@@ -1,6 +1,6 @@
-from PIL import Image as PilI
 from PIL import ImageGrab as PilIg
-from PIL import ImageOps as PilIo
+import cv2
+import numpy as np
 
 
 class Image:
@@ -14,53 +14,54 @@ class Image:
         # Tesseract image for extraction
         self.tese_img = None
 
-    def resize_multiple_images(self, image: list, size: list[int, float]):
-        return [img.resize(sz) for img, sz in zip(image, size)]
-
+    def convert_from_image_to_cv2(self, image):
+        return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+    def crop_image(self, x_pos, y_pos, width, height, image):
+        return image[y_pos:height, x_pos:width]
+        
+    def scale_image(self, image, float_value):
+        height, width = image.shape[0], image.shape[1]
+        scale_factor = 30 / float_value
+        new_width = int(round(width * scale_factor))
+        new_height = int(round(height * scale_factor))
+        return cv2.resize(image, (new_width, new_height))
+        
     def update(self):
+        # Crop position
+        x, y, w, h =  self.window_rect.left + 110, self.window_rect.top + 10, self.window_rect.w - 10, self.window_rect.h - 10
+        
         # Get full_screenshot
-        self.img = PilIg.grab(all_screens=False)
-        # Croping image
-        self.img = self.img.crop(
-            (
-                self.window_rect.left + 110,
-                self.window_rect.top + 10,
-                self.window_rect.w - 10,
-                self.window_rect.h - 10,
-            )
-        )
+        img = PilIg.grab(all_screens=False)
+        
+        # Convert pil to cv2
+        img = self.convert_from_image_to_cv2(img)
+        
+        # Main image
+        img = self.crop_image(x, y, w, h, img)
 
-        # Get the list of cropped images (should be 4 images)
-        self.imgs = [self.img.crop(rect.rect) for rect in self.rects.values()]
+        # Preprocesing the image
+        images = []
+        
+        for rect in self.rects.values():
+            # Crop position
+            x, y, w, h = rect.rect
+            
+            # Croping the image from main image
+            cropped_img = self.crop_image(x, y, w, h,img)
+            
+            # Invert image
+            inverted_image = cv2.bitwise_not(cropped_img)
+            
+            # Gray scaled image
+            gray_scaled_image = cv2.cvtColor(inverted_image, cv2.COLOR_BGR2GRAY)
+            
+            # Binaryse the image (make it black and white)
+            thresh, im_bw = cv2.threshold(gray_scaled_image, 170, 230, cv2.THRESH_BINARY)
+            
+            # Erode image
+            eroded_image = (im_bw)
 
-        # Resize images for blit
-        self.imgs = [
-            img.resize(rect.default_rect.size)
-            for rect, img in zip(self.rects.values(), self.imgs)
-        ]
+            images.append(eroded_image)
 
-        # Stiching images to minimize performance time
-        self.tese_img = self.stich_images()
-
-        # If needed later make a function
-        # x, y = image.size
-        # ratio = (x / y) * 2
-        # image = image.resize((round(x * ratio), round(y * ratio)))
-        self.tese_img = PilIo.invert(self.tese_img)
-
-    def get_total_image_size(self):
-        total_size = [0, 0]
-        for img in self.imgs:
-            total_size[1] += img.size[1]
-            total_size[0] = max(total_size[0], img.size[0])
-        return total_size
-
-    def stich_images(self):
-        # New image surface to paste old images
-        new_img = PilI.new("RGB", self.get_total_image_size(), (37, 24, 15))
-        # Stiching process
-        current_height = 0
-        for img in self.imgs:
-            new_img.paste(img, (0, current_height))
-            current_height += img.size[1]
-        return new_img
+        self.tese_imgs = images

@@ -16,7 +16,7 @@ user32.SetProcessDPIAware()
 class Main:
     def __init__(self):
         pygame.init()
-        path_to_tesseract = Path(r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe")
+        path_to_tesseract = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
         pytesseract.tesseract_cmd = str(path_to_tesseract)
         pygame.display.set_caption("Sw Tool")
         self.clock = pygame.time.Clock()

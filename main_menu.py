@@ -51,6 +51,7 @@ class Main_menu:
         )
 
     def update(self):
+        print(self.show)
         if self.state == "rune":
             self.rects = self.rune_rects
         else:
@@ -63,13 +64,14 @@ class Main_menu:
         Rects.transparent_rect.h = self.height - 20
 
         # Rects
-        for key in ("title_rect", "main_rect", "inate_rect", "sub_rect"):
+        for key in ("title_rect", "main_rect", "inate_rect", "sub_rect", "grade_rect"):
             self.rects[key].get_scaled_rect()
 
         self.rects["main_rect"].rect.top = self.rects["title_rect"].rect.bottom - 2
         self.rects["inate_rect"].rect.top = self.rects["main_rect"].rect.bottom - 2
         self.rects["sub_rect"].rect.top = self.rects["inate_rect"].rect.bottom - 2
-
+        self.rects['grade_rect'].rect.top = self.rects['title_rect'].rect.bottom + 10
+        
         # Prepare transparent window
         self.transparent_window()
 
@@ -87,9 +89,9 @@ class Main_menu:
 
         if self.show == "show":
             if self.state == "rune":
-                for key in ("title_rect", "main_rect", "inate_rect", "sub_rect"):
+                for key in ("title_rect", "main_rect", "inate_rect", "sub_rect", "grade_rect"):
                     self.rects[key].draw(screen, MENU_BORDER_COLOR)
 
             else:
-                for key in ("title_rect", "main_rect", "sub_rect"):
+                for key in ("title_rect", "main_rect", "sub_rect", "grade_rect"):
                     self.rects[key].draw(screen, MENU_BORDER_COLOR)

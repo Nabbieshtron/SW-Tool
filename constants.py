@@ -70,14 +70,14 @@ BUTTON_NAMES: dict = {
     "HP_flat": "0.5",
     "DEF_flat": "0.5",
     "ATK_flat": "0.5",
-    "HP": "1",
-    "DEF": "1",
-    "ATK": "1",
-    "SPD": "1",
-    "CRI_Rate": "1",
-    "CRI_Damage": "1",
-    "Accuracy": "1",
-    "Resistance": "1",
+    "HP": "1.0",
+    "DEF": "1.0",
+    "ATK": "1.0",
+    "SPD": "1.0",
+    "CRI_Rate": "1.0",
+    "CRI_Damage": "1.0",
+    "Accuracy": "1.0",
+    "Resistance": "1.0",
     "apply_changes": "Apply",
     "cancel_changes": "Cancel",
 }
@@ -110,6 +110,7 @@ RUNE_RECTS: dict = {
     "main_rect": Rect(210, 0, 200, 50),
     "inate_rect": Rect(210, 0, 200, 45),
     "sub_rect": Rect(120, 0, 200, 130),
+    "grade_rect": Rect(447, 0, 130, 30),
 }
 
 # Arifact box position, size in the main_menu
@@ -143,9 +144,9 @@ DEFAULT_MAIN_POWER_UP: dict = {
     "no_flat": {
         "cri rate": ([5, 7], [2.45, 3], [47, 58]),
         "cri dmg": ([8, 11], [3.33, 4], [65, 80]),
-        "atk": ([8, 11], [2.45, 3], [51, 63]),
-        "hp": ([8, 11], [2.45, 3], [51, 63]),
-        "def": ([8, 11], [2.45, 3], [51, 63]),
+        "atk": ([8, 11], [2.5, 3], [51, 63]),
+        "hp": ([8, 11], [2.5, 3], [51, 63]),
+        "def": ([8, 11], [2.5, 3], [51, 63]),
         "resistance": ([9, 12], [2.45, 3], [51, 64]),
         "accuracy": ([9, 12], [2.45, 3], [51, 64]),
     },

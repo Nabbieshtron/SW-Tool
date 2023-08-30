@@ -10,23 +10,13 @@ class Settings:
         self.main_menu = main_menu
         self.program = program
         self.cwd = pathlib.Path().absolute() / "settings.json"
+        self.saves = {}
+        
+        # Setting min and max multipliers
         self.max_multiplier = 3
         self.min_multiplier = 0
-        self.buttons = {
-            key: Button(
-                constants.BUTTON_NAMES[key],
-                constants.BUTTON_POSITIONS[key],
-                constants.BUTTON_SIZE["settings"],
-            )
-            for key in (
-                "asset_type",
-                "hide_or_show",
-                "apply_changes",
-                "cancel_changes",
-            )
-        }
-        self.buttons.update(
-            {
+        
+        self.buttons ={
                 key: Button(
                     constants.BUTTON_NAMES[key],
                     constants.BUTTON_POSITIONS[key],
@@ -46,25 +36,38 @@ class Settings:
                     "Resistance",
                 )
             }
+        
+        self.saves["efficiency_multiplier"] = {key: self.buttons[key].text.lower()for key in self.buttons}
+        
+        self.buttons.update({
+            key: Button(
+                constants.BUTTON_NAMES[key],
+                constants.BUTTON_POSITIONS[key],
+                constants.BUTTON_SIZE["settings"],
+            )
+            for key in (
+                "asset_type",
+                "hide_or_show",
+                "apply_changes",
+                "cancel_changes",)
+            }
         )
-
+        
+        for key in ("asset_type", "hide_or_show"):
+            self.saves[key] = self.buttons[key].text.lower()
+        
         # Loading saves
-        self.load()
+        self.load() if self.cwd.exists() else self.save()
 
-        self.saves = {
-            key: self.buttons[key].text.lower()
-            for key in self.buttons
-            if key not in ("apply_changes", "cancel_changes")
-        }
 
     def apply_changes(self):
-        # Settings preferences
+        # Collecting new settings
         self.saves = {
             key: self.buttons[key].text.lower()
             for key in self.buttons
             if key not in ("apply_changes", "cancel_changes")
         }
-
+        
         # Applying the changes
         self.program.state = self.saves["asset_type"]
         self.main_menu.state = self.saves["asset_type"]
@@ -86,7 +89,7 @@ class Settings:
             except json.JSONDecodeError:
                 self.save()
 
-        for key, value in self.saves.items():
+        for key, value in self.saves['efficiency_multiplier'].items():
             if key == "hide_or_show":
                 self.buttons[key].flip_text = value == "show"
                 self.main_menu.show = value
