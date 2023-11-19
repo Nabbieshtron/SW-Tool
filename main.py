@@ -1,48 +1,40 @@
-import ctypes
-import sys
-from pathlib import Path
-
 import pygame
-from pytesseract import pytesseract
+import pathlib
+import json
 
-from app_handler import AppHandler
-from display import Display_handler
-from event_handler import Event_handler
+from app import App
+from main_menu import MainMenu
+from rune import Rune
+from settings import Settings
+from constants import DEFAULT_PREFERENCES
 
-user32 = ctypes.windll.user32
-user32.SetProcessDPIAware()
+# Paths
+preferences_path = pathlib.Path().absolute() / "settings.json"
+rune_path = pathlib.Path().absolute() / "runes.json"
+persist = {}
 
+if not rune_path.exists():
+    rune_path.touch(exist_ok=True)
+if not preferences_path.exists():
+    preferences_path.touch(exist_ok=True)
+    
+# All this move to App class -> load from disk
+with open(rune_path, "r") as file:
+    try:
+        persist['runes'] = json.load(file)
+    except json.JSONDecodeError:
+        persist['runes'] = {}
 
-class Main:
-    def __init__(self):
-        pygame.init()
-        path_to_tesseract = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
-        pytesseract.tesseract_cmd = str(path_to_tesseract)
-        pygame.display.set_caption("Sw Tool")
-        self.clock = pygame.time.Clock()
-        self.app_handler = AppHandler()
-        self.display = Display_handler(self.app_handler)
-        self.event_handler = Event_handler(self.app_handler, self.display)
+with open(preferences_path, "r+") as file:
+    try:
+        persist = json.load(file)
+    except json.JSONDecodeError:
+        json.dump(DEFAULT_PREFERENCES, file, indent=4)
+        persist = DEFAULT_PREFERENCES
 
-    def run(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.VIDEORESIZE:
-                    self.event_handler.video_resize()
-                if event.type == pygame.KEYDOWN:
-                    self.event_handler.key_down(event.key)
-                if event.type == pygame.MOUSEBUTTONUP:
-                    self.event_handler.mouse_button_up(event.button)
+_app = App('Sw Tool', pygame.Rect(0, 0, 100, 100), 60)
+main_menu = MainMenu(_app, persist, preferences_path)
+rune = Rune(_app, persist, rune_path)
+settings = Settings(_app, persist, preferences_path)
 
-            self.app_handler.update()
-            self.display.update()
-            pygame.display.update()
-            self.clock.tick(60)
-
-
-if __name__ == "__main__":
-    main = Main()
-    main.run()
+_app.run('main_menu', {'main_menu':main_menu, 'start':rune, 'settings':settings})

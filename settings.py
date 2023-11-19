@@ -1,148 +1,183 @@
+import pygame
 import json
 import pathlib
+from functools import partial
 
-import constants
+from game_state import GameState
 from button import Button
+from text_box import TextBox
+from constants import (
+    BACKGROUND_COLOR, 
+    SETTINGS_TEXTS_WITH_POS, 
+    SETTINGS_FONT,
+    BUTTON_RECTS,
+    BUTTON_TEXTS,
+    ELEVATION,
+    BUTTON_FONT,
+    BUTTON_TEXT_COLOR,
+    BUTTON_BG_COLORS,
+    BUTTON_HOVER_COLOR,
+    EFFICIENCY_MULTIPLIERS_TEXT_BOXES_ATTRIBUTES,
+    DEFAULT_EFFICIENCY_MULTIPLIER,
+)
 
 
-class Settings:
-    def __init__(self, main_menu, program):
-        self.main_menu = main_menu
-        self.program = program
-        self.cwd = pathlib.Path().absolute() / "settings.json"
-        self.saves = {}
+class Settings(GameState):
+    def __init__(self, app, persist, save_path):
+        super().__init__(app, persist)
+        self.app = app
+        self.perist = persist
+        self.rendered_objs = []
         
-        # Setting min and max multipliers
-        self.max_multiplier = 3
-        self.min_multiplier = 0
+        # Path
+        self.save_path = save_path
         
-        self.buttons ={
-                key: Button(
-                    constants.BUTTON_NAMES[key],
-                    constants.BUTTON_POSITIONS[key],
-                    constants.BUTTON_SIZE["eff_multipliers"],
-                )
-                for key in (
-                    "HP_flat",
-                    "DEF_flat",
-                    "ATK_flat",
-                    "HP",
-                    "DEF",
-                    "ATK",
-                    "SPD",
-                    "CRI_Rate",
-                    "CRI_Damage",
-                    "Accuracy",
-                    "Resistance",
-                )
-            }
+        # Efficiency multiplier default min and max values
+        self.efficiency_multiplier_max = 3.0
+        self.efficiency_multiplier_min = 0
         
-        self.saves["efficiency_multiplier"] = {key: self.buttons[key].text.lower()for key in self.buttons}
-        
-        self.buttons.update({
+        self.buttons = {
             key: Button(
-                constants.BUTTON_NAMES[key],
-                constants.BUTTON_POSITIONS[key],
-                constants.BUTTON_SIZE["settings"],
+                BUTTON_RECTS[key], 
+                ELEVATION,
+                BUTTON_TEXTS[key],
+                BUTTON_FONT,
+                BUTTON_TEXT_COLOR,
+                BUTTON_BG_COLORS,
+                BUTTON_HOVER_COLOR,
+                partial(self.on_press, key)
             )
             for key in (
-                "asset_type",
-                "hide_or_show",
-                "apply_changes",
-                "cancel_changes",)
-            }
-        )
-        
-        for key in ("asset_type", "hide_or_show"):
-            self.saves[key] = self.buttons[key].text.lower()
-        
-        # Loading saves
-        self.load() if self.cwd.exists() else self.save()
+                'assets',
+                'navigation_boxes',
+                'efficiency_default_value',
+                'apply',
+                'cancel'
+            )
+        }
 
+        # Text boxes
+        self.text_boxes = {
+            tpl[0]: TextBox(EFFICIENCY_MULTIPLIERS_TEXT_BOXES_ATTRIBUTES[i], tpl[1])
+            for i, tpl in enumerate(DEFAULT_EFFICIENCY_MULTIPLIER.items())
+        }
+        self.active_text_box = None
+        
+        # Load saves
+        self.load_preferences()
+        
+    def on_press(self, key):
+        if key == 'assets':
+            if self.buttons[key].text == 'Rune':
+                self.buttons[key].set_title('Artifact')
+            else:
+                self.buttons[key].set_title('Rune')
+        elif key == 'navigation_boxes':
+            if self.buttons[key].text == 'True':
+                self.buttons[key].set_title('False')
+            else:
+                self.buttons[key].set_title('True')
+        elif key == 'efficiency_default_value':
+            if self.buttons[key].text == 'True':
+                self.buttons[key].set_title('False')
+            else:
+                self.buttons[key].set_title('True')
+        elif key == 'apply':
+            # Collecting new user preferences and saving to disk
+            self.app.save_to_disk(self.get_preferences(), self.save_path)
+            
+            self.app.next_state("main_menu", self.perist)
+            self.app.set_window('main_menu', True)
+        elif key == 'cancel':
+            self.load_preferences()
+            self.app.next_state('main_menu', self.perist)
+            self.app.set_window('main_menu', True)
+        else:
+            pass
+            
+    def get_preferences(self):
+        preferences = {}
 
-    def apply_changes(self):
-        # Collecting new settings
-        self.saves = {
-            key: self.buttons[key].text.lower()
-            for key in self.buttons
-            if key not in ("apply_changes", "cancel_changes")
+        # Assets state : Rune, Artifact
+        preferences['assets_state'] = self.buttons['assets'].text
+        
+        # Navigation boxes state : True or False
+        state = self.buttons['navigation_boxes'].text == 'True'
+        preferences['navigation_boxes_state'] = state
+        
+        # Efficiency multipliers : dict[str:str]
+        preferences['efficiency_multipliers'] = {
+            key: tbox.text for key, tbox in self.text_boxes.items()
         }
         
-        # Applying the changes
-        self.program.state = self.saves["asset_type"]
-        self.main_menu.state = self.saves["asset_type"]
-        self.main_menu.show = self.saves["hide_or_show"]
+        # Efficiency default value state : True or False
+        state = self.buttons['efficiency_default_value'].text == 'True'
+        preferences['efficiency_default_value'] = state
+        
+        # Update persist
+        self.persist.update(preferences)
+        return preferences
+        
+    def load_preferences(self):
+        # Assets state : Rune, Artifact
+        self.buttons['assets'].text = self.persist['assets_state']
+        
+        # Navigation boxes state : Show, Hide
+        state = str(self.persist['navigation_boxes_state'])
+        self.buttons['navigation_boxes'].text = state
+        
+        # Efficiency multipliers
+        for key, value in self.persist['efficiency_multipliers'].items():
+            self.text_boxes[key].text = value
+        
+        # Efficiency default value state : True or False
+        state = str(self.persist['efficiency_default_value'])
+        self.buttons['efficiency_default_value'].text = state
 
-        # Save changes to json
-        self.save()
+    def rendering(self):
+        self.rendered_objs = []
+        
+        for _rect, text in SETTINGS_TEXTS_WITH_POS:
+            text_obj = SETTINGS_FONT.render(text, True, "Black")
+            
+            # Set rect size
+            _rect.size = text_obj.get_size()
+            
+            self.rendered_objs.append((text_obj, _rect))
 
-    def save(self):
-        # Save json file
-        with open(self.cwd, "w") as settings:
-            json.dump(self.saves, settings, indent=4)
+    def dispatch_event(self, e):
+        # Buttons events
+        for button in self.buttons.values():
+            button.dispatch_event(e)
 
-    def load(self):
-        # Load json file
-        with open(self.cwd, "r") as settings:
-            try:
-                self.saves = json.load(settings)
-            except json.JSONDecodeError:
-                self.save()
+        for tbox in self.text_boxes.values():
+            tbox.dispatch_event(e)
+ 
+        if e.type == pygame.QUIT:
+            self.running = False
+            
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_ESCAPE:
+                self.app.next_state('main_menu', self.persist)
+                self.app.set_window('main_menu', True)
+                
+    def update(self, dt):
+        for button in self.buttons.values():
+            button.update()
+        
+        for tbox in self.text_boxes.values():
+            tbox.update()
 
-        for key, value in self.saves['efficiency_multiplier'].items():
-            if key == "hide_or_show":
-                self.buttons[key].flip_text = value == "show"
-                self.main_menu.show = value
-            elif key == "asset_type":
-                self.buttons[key].flip_text = value == "rune"
-                self.main_menu.state = value
-                self.program.state = value
-            else:
-                self.buttons[key].text = value
-
-    # Increase number showed on buttons
-    def button_increase(self, key, increment):
-        # Button name -> str(float)
-        text = self.buttons[key].text
-        num = float(text)
-
-        # Checking the boundaries
-        if num < self.max_multiplier:
-            num = round(num + increment, 1)
-            self.buttons[key].text = str(num)
-
-    # Decrease number showed on buttons
-    def button_decrease(self, key, decrement):
-        # Button name -> str(float)
-        text = self.buttons[key].text
-        num = float(text)
-
-        # Checking the boundaries
-        if num > self.min_multiplier:
-            num = round(num - decrement, 1)
-            self.buttons[key].text = str(num)
-
-    def draw(self, surface):
-        surface.fill(constants.BG_COLOR)
-        for key in constants.SETTINGS_TEXT_RECTS:
-            surface.blit(
-                constants.SETTINGS_TEXT_SURFACES[key],
-                constants.SETTINGS_TEXT_RECTS[key],
-            )
-
-        for key, value in self.buttons.items():
-            value.draw(surface)
-            if key in (
-                "asset_type",
-                "hide_or_show",
-                "apply_changes",
-                "cancel_changes",
-            ):
-                value.button_effects()
-            else:
-                value.button_effects(right_click=True)
-
-            if key == "asset_type":
-                value.text_effect("Artifact")
-            elif key == "hide_or_show":
-                value.text_effect("Hide")
+        self.rendering()
+        
+    def draw(self, screen):
+        screen.fill(BACKGROUND_COLOR)
+        
+        for tbox in self.text_boxes.values():
+            tbox.draw(screen)
+        
+        for obj, pos in self.rendered_objs:
+            screen.blit(obj, pos)
+            
+        for button in self.buttons.values():
+            button.draw(screen)

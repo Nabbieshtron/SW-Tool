@@ -1,92 +1,79 @@
 import pygame
-import win32gui
-
-import constants
-
-
-def get_mouse_pos():
-    # get mouse position
-    flags, hcursor, (x1, y1) = win32gui.GetCursorInfo()
-    rect = win32gui.GetWindowRect(pygame.display.get_wm_info()["window"])
-    titlebar_padding_x = rect[2] - rect[0] - pygame.display.get_window_size()[0]
-    titlebar_padding_y = rect[3] - rect[1] - pygame.display.get_window_size()[1]
-    pos_x = x1 - rect[0] - titlebar_padding_x // 2
-    pos_y = y1 - rect[1] - titlebar_padding_y + titlebar_padding_x // 2
-    return (pos_x, pos_y)
-
 
 class Button:
-    def __init__(self, text, position, size):
-        self.pressed = False
-        self.flip_text = True
-        self.clicked = False
+    def __init__(
+        self,
+        rect,
+        elevation,
+        text,
+        font,
+        text_color,
+        bg_colors,
+        hover_color,
+        method = lambda: None,
+    ):
+        self.top_rect = rect
+        self.bottom_rect = rect.copy()
+        self.font = font
+        self.func = method
+        
+        self.dynamic_elevation = elevation
+        self.original_pos_y = rect.y
+        self.bg_colors = bg_colors
+        self.text = text
+        
+        self.top_color = self.bg_colors[0]
+        self.bottom_color = self.bg_colors[1]
+        self.text_color = text_color
+        self.hover_color = hover_color
+        
 
-        self.original_text = text
-        self.text: str = text
+        self.text_surf = None
+        self.text_pos = None
 
-        self.color1 = "#475F77"
-        self.pos: tuple = position
-        self.size: tuple = size
-        self.dynamic_elevation = constants.ELEVATION
-        self.original_pos_y = self.pos[1]
+        self.is_pressed = False
+        
+    def dispatch_event(self, e):
+        if e.type == pygame.MOUSEBUTTONDOWN:
+            if e.button == 1 and self.top_rect.collidepoint(e.pos):
+                self.is_pressed = True
+                self.dynamic_elevation = 0
+            else:
+                self.is_pressed = False
 
-        self.top_rect = pygame.Rect((self.pos), (self.size))
-        self.bottom_rect = pygame.Rect((self.pos), (self.size[0], constants.ELEVATION))
-
-    def collision_check(self):
-        return self.top_rect.collidepoint(
-            get_mouse_pos()
-        ) or self.bottom_rect.collidepoint(get_mouse_pos())
-
-    def button_effects(self, left_click=True, right_click=False):
-        if left_click and not right_click:
-            detect_press = (pygame.mouse.get_pressed()[0],)
-        elif left_click and right_click:
-            detect_press = pygame.mouse.get_pressed()[::2]
-
-        # Blinking effect
-        self.color1 = (
-            constants.BUTTON_EFFECT_ON_COLOR
-            if self.collision_check()
-            else constants.BUTTON_EFFECT_OFF_COLOR
-        )
-
-        # Pressing effect
-        if True in detect_press and not self.pressed:
-            self.pressed = True
-            self.dynamic_elevation = (
-                0 if self.collision_check() else constants.ELEVATION
-            )
-
-        if not True in detect_press:
-            self.pressed = False
-            self.dynamic_elevation = constants.ELEVATION
-
-    def text_effect(self, text):
-        # Text effect
-        if self.collision_check():
-            self.text = text if self.flip_text else self.original_text
-            if self.clicked:
-                self.clicked = False
-                self.flip_text = False if self.flip_text else True
-
-        else:
-            self.text = self.original_text if self.flip_text else text
-
-    def draw(self, surface):
-        text_surf = constants.BUTTON_FONT.render(
-            self.text, True, constants.BUTTON_TEXT_COLOR
-        )
-        text_rect = text_surf.get_rect(center=self.top_rect.center)
-
+        elif e.type == pygame.MOUSEBUTTONUP:
+            if self.is_pressed and self.top_rect.collidepoint(e.pos):
+                self.func()
+            self.dynamic_elevation = 6
+            self.is_pressed = False
+        
+    def set_title(self, text):
+        self.text = text
+        
+    def rendering(self):
+        self.text_surf = self.font.render(self.text, True, self.text_color)
+        self.text_pos = self.text_surf.get_rect(center=self.top_rect.center)
+        
+    def update(self):
         # Elevation logic
         self.top_rect.y = self.original_pos_y - self.dynamic_elevation
-        text_rect.center = self.top_rect.center
         self.bottom_rect.midtop = self.top_rect.midtop
         self.bottom_rect.height = self.top_rect.height + self.dynamic_elevation
-
-        pygame.draw.rect(
-            surface, constants.BUTTON_BOTTOM_COLOR, self.bottom_rect, border_radius=12
+        
+        # Hover effect. Note!!! event loop pygame.MOUSEMOTION only works when mouse is moving
+        if self.top_rect.collidepoint(pygame.mouse.get_pos()):
+            self.top_color = self.hover_color
+        elif not self.is_pressed:
+            self.top_color = self.bg_colors[0]
+            
+        self.rendering()
+        
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.bottom_color, self.bottom_rect, border_radius = 7)
+        pygame.draw.rect(screen, self.top_color, self.top_rect, border_radius=7)
+        
+        screen.blit(
+            self.text_surf,
+            self.text_pos,
         )
-        pygame.draw.rect(surface, self.color1, self.top_rect, border_radius=12)
-        surface.blit(text_surf, text_rect)
+
