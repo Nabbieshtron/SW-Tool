@@ -17,7 +17,7 @@ class GameState(ABC):
         if persist:
             self.persist = persist
 
-    def dispatch_event(self, e):
+    def dispatch_events(self, e):
         """Handle user events"""
         if (e.type == pygame.QUIT or
                 e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):

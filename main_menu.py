@@ -4,23 +4,18 @@ import win32con
 import win32gui
 from functools import partial
 
+import user_config
 from game_state import GameState
 from windows import get_window_rect
 from button import Button
+from tesseract import Tesseract
 from constants import (
     NAVIGATION_RECTANGLES_RECT,
-    BUTTON_RECTS,
-    BUTTON_TEXTS,
-    ELEVATION,
-    BACKGROUND_COLOR, 
+    BG_COLOR, 
     NAVIGATION_RECTANGLE_COLOR,
-    BUTTON_FONT,
-    BUTTON_TEXT_COLOR,
-    BUTTON_BG_COLORS,
-    BUTTON_HOVER_COLOR
+    DEFAULT_CONFIGURATIONS,
+    POSITION_INDICATOR_COLOR
 )
-
-from tesseract import Tesseract
 
 class MainMenu(GameState):
     def __init__(self, app, persist, save_path):
@@ -31,52 +26,92 @@ class MainMenu(GameState):
         self.screen = None
         self.save_path = save_path
         
-        # Rectangle visibility flag
-        self.navigation_boxes = True
+        # If positions of an app wasnt set the start button wont work
+        self.is_set = DEFAULT_CONFIGURATIONS['is_set']
+        self.indicator_color = POSITION_INDICATOR_COLOR
+        
+        # Rectangle visibility on/off
+        self.navigation_boxes_state = DEFAULT_CONFIGURATIONS['navigation_boxes']
 
         # Rectangles
         self.transparent_rect = pygame.Rect(110, 10, 480, 340)
         self.navigation_rects = NAVIGATION_RECTANGLES_RECT
         
         self.buttons = {
-            key: Button(
-                BUTTON_RECTS[key], 
-                ELEVATION,
-                BUTTON_TEXTS[key],
-                BUTTON_FONT,
-                BUTTON_TEXT_COLOR,
-                BUTTON_BG_COLORS,
-                BUTTON_HOVER_COLOR,
-                partial(self.next_state, key)
-            )
-            for key in ('start', 'settings', 'exit')
+            'rune_manager': Button(
+                text='Start', 
+                font=pygame.font.SysFont('Arial', 30),
+                rect=pygame.Rect(5, 15, 100, 35),
+                method=partial(self.next_state, 'rune_manager'),
+                elevation=6,
+                top_color="#475F77",
+                bottom_color="#354B5E",
+                text_color="#FFFFFF",
+                collide_color="#D74B4B"
+            ),
+            'grind_manager': Button(
+                text='Manage', 
+                font=pygame.font.SysFont('Arial', 30),
+                rect=pygame.Rect(5, 70, 100, 35),
+                method=partial(self.next_state, 'grind_manager'),
+                elevation=6,
+                top_color="#475F77",
+                bottom_color="#354B5E",
+                text_color="#FFFFFF",
+                collide_color="#D74B4B"
+            ),
+            'settings': Button(
+                text='Settings', 
+                font=pygame.font.SysFont('Arial', 30),
+                rect=pygame.Rect(5, 125, 100, 35),
+                method=partial(self.next_state, 'settings'),
+                elevation=6,
+                top_color="#475F77",
+                bottom_color="#354B5E",
+                text_color="#FFFFFF",
+                collide_color="#D74B4B"
+            ),
+            'exit': Button(
+                text='Exit', 
+                font=pygame.font.SysFont('Arial', 30),
+                rect=pygame.Rect(5, 180, 100, 35),
+                method=partial(self.next_state, 'exit'),
+                elevation=6,
+                top_color="#475F77",
+                bottom_color="#354B5E",
+                text_color="#FFFFFF",
+                collide_color="#D74B4B"
+            ),
         }
         
-        self.load_preferences()
-        
     def next_state(self, state):
-        if (
-            state == "start" and self.persist["transparent_dim"]
-        ) or state == "settings":
+        if (state == "rune_manager" and self.persist.get('is_set', self.is_set)) or state in ("settings", "grind_manager"):
             self.app.next_state(state, self.persist)
-            self.app.set_window(state)
+            if state == 'grind_manager':
+                self.app.set_window(state, True)
+            else:
+                self.app.set_window(state)
+
         elif state == 'exit':
             self.running = False
         
-    def dispatch_event(self, e):
+    def dispatch_events(self, e):
         if self.screen is None: 
             self.screen = self.app.screen.get_rect()
             
         # Buttons events
         for button in self.buttons.values():
-            button.dispatch_event(e)
+            button.dispatch_events(e)
         
         # Set position on RETURN
         if e.type == pygame.KEYDOWN and e.key == pygame.K_RETURN:
-            self.persist['window_dim_attribute'] = get_window_rect()
-            self.persist['navigation_dims_attributes'] = self.navigation_rects
-            self.persist['transparent_dim'] = self.transparent_rect
-            self.app.save_to_disk(self.get_preferences(), self.save_path)
+            self.persist['is_set'] = True
+            self.persist['window_rect_attribute'] = get_window_rect()
+            self.persist['navigation_rect_attributes'] = self.navigation_rects
+            self.persist['transparent_rect'] = self.transparent_rect
+            config = self.get_configurations()
+            self.persist.update(config)
+            user_config.save_settings(config, self.save_path)
             
         if (e.type == pygame.QUIT or
                 e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
@@ -90,21 +125,22 @@ class MainMenu(GameState):
             if self.screen.w == 360 or self.screen.h == 170:
                 pygame.display.set_mode((self.screen.w, self.screen.h), pygame.RESIZABLE)
     
-    def get_preferences(self):
-        preferences = {}
+    def get_configurations(self):
+        keys = ('window_rect_attribute', 'navigation_rect_attributes', 'transparent_rect')
+        dim_type = ('pos_x', 'pos_y', 'width', 'height')
+        output = {}
         
-        preferences['window_dim_attribute'] = tuple(self.persist['window_dim_attribute'])
+        output['is_set'] = self.persist.get('is_set', self.is_set)
         
-        preferences['transparent_dim'] = tuple(self.persist['transparent_dim'])
-        
-        preferences['navigation_dims_attributes'] = {key:tuple(value) for key, value in self.persist['navigation_dims_attributes'].items()}
-        
-        return preferences
-        
-    def load_preferences(self):
-         # Show or Hide nav box
-        self.navigation_boxes = self.persist['navigation_boxes_state']
-        
+        if self.persist.get('is_set', self.is_set):
+            output['window_rect_attribute'] = {key:dim for key, dim in zip(dim_type, self.persist['window_rect_attribute'])}
+            output['transparent_rect'] = {key:dim for key, dim in zip(dim_type, self.persist['transparent_rect'])}
+            output['navigation_rect_attributes'] = {
+                key: {key:dim for key, dim in zip(dim_type, value)}
+                for key, value in self.persist["navigation_rect_attributes"].items()
+            }
+
+        return output
         
     def update(self, dt):
         # Collecting all the ratios of navigation rects
@@ -144,22 +180,23 @@ class MainMenu(GameState):
             hmwd, win32api.RGB(255, 0, 128), 0, win32con.LWA_COLORKEY
         )
         
+        self.indicator_color = "Green" if self.persist.get('is_set', self.is_set) else "Red"
+
         for button in self.buttons.values():
             button.update()
 
     def draw(self, screen):
-        screen.fill(BACKGROUND_COLOR)
+        screen.fill(BG_COLOR)
 
         # Draw transparent window
         pygame.draw.rect(screen, (255, 0, 128), self.transparent_rect)
         
         # Temp thing, update in future
-        c = "Green" if self.persist['transparent_dim'] else "Red"
-        pygame.draw.rect(screen, c, self.transparent_rect, 2)
+        pygame.draw.rect(screen, self.indicator_color, self.transparent_rect, 2)
         
         for button in self.buttons.values():
             button.draw(screen)
         
-        if self.navigation_boxes:
+        if self.persist.get('navigation_boxes', self.navigation_boxes_state):
             for key in ("title", "main", "innate", "substats", "grade"):
                     pygame.draw.rect(screen, NAVIGATION_RECTANGLE_COLOR, self.navigation_rects[key], 2)

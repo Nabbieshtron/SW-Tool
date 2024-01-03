@@ -3,22 +3,16 @@ import json
 import pathlib
 from functools import partial
 
+import user_config
 from game_state import GameState
 from button import Button
-from text_box import TextBox
+from widgets import TextBox
 from constants import (
-    BACKGROUND_COLOR, 
-    SETTINGS_TEXTS_WITH_POS, 
-    SETTINGS_FONT,
-    BUTTON_RECTS,
-    BUTTON_TEXTS,
-    ELEVATION,
-    BUTTON_FONT,
-    BUTTON_TEXT_COLOR,
-    BUTTON_BG_COLORS,
-    BUTTON_HOVER_COLOR,
-    EFFICIENCY_MULTIPLIERS_TEXT_BOXES_ATTRIBUTES,
-    DEFAULT_EFFICIENCY_MULTIPLIER,
+    BG_COLOR, 
+    SETTINGS_BLIT,
+    TEXT_BOX_COLOR,
+    TEXT_BOX_FONT,
+    SUB_VALUES
 )
 
 
@@ -27,7 +21,8 @@ class Settings(GameState):
         super().__init__(app, persist)
         self.app = app
         self.perist = persist
-        self.rendered_objs = []
+        self.rendered_objs = SETTINGS_BLIT
+        self.active_text_box = None
         
         # Path
         self.save_path = save_path
@@ -35,37 +30,51 @@ class Settings(GameState):
         # Efficiency multiplier default min and max values
         self.efficiency_multiplier_max = 3.0
         self.efficiency_multiplier_min = 0
-        
-        self.buttons = {
-            key: Button(
-                BUTTON_RECTS[key], 
-                ELEVATION,
-                BUTTON_TEXTS[key],
-                BUTTON_FONT,
-                BUTTON_TEXT_COLOR,
-                BUTTON_BG_COLORS,
-                BUTTON_HOVER_COLOR,
-                partial(self.on_press, key)
-            )
-            for key in (
-                'assets',
-                'navigation_boxes',
-                'efficiency_default_value',
-                'apply',
-                'cancel'
-            )
-        }
 
-        # Text boxes
-        self.text_boxes = {
-            tpl[0]: TextBox(EFFICIENCY_MULTIPLIERS_TEXT_BOXES_ATTRIBUTES[i], tpl[1])
-            for i, tpl in enumerate(DEFAULT_EFFICIENCY_MULTIPLIER.items())
-        }
-        self.active_text_box = None
+        self.buttons = {}
+        for n, (key, text) in enumerate(
+            (
+                ("assets", "Rune"),
+                ("navigation_boxes", "True"),
+                ("efficiency_default_value", "True"),
+                ("apply", "Apply"),
+                ("cancel", "Cancel"),
+            )
+        ):
+            rect = 400, 20 + (60 * n), 150, 35
+            if key == 'apply':
+                rect = 325, 650, 150, 35
+            if key == 'cancel':
+                rect = 525, 650, 150, 35
+                
+            self.buttons[key] = Button(
+                text=text,
+                font=pygame.font.SysFont("Arial", 30),
+                rect=pygame.Rect(rect),
+                method=partial(self.on_press, key),
+                elevation=6,
+                top_color="#475F77",
+                bottom_color="#354B5E",
+                text_color="#FFFFFF",
+                collide_color="#D74B4B",
+            )
         
-        # Load saves
-        self.load_preferences()
-        
+        self.text_boxes = {}
+        text = '0.5'
+        for n, key in enumerate(SUB_VALUES):
+            if n > 2:
+                text = '1.0'
+                
+            self.text_boxes[key] = TextBox(
+                main=text,
+                font=TEXT_BOX_FONT,
+                rect=pygame.Rect(850, 75+(50*n), 100, 40),
+                color_active=TEXT_BOX_COLOR,
+                color_menu=['Pink', 'Light pink'],
+                char_type='FLOAT',
+                char_limit=3,
+                )
+
     def on_press(self, key):
         if key == 'assets':
             if self.buttons[key].text == 'Rune':
@@ -83,75 +92,46 @@ class Settings(GameState):
             else:
                 self.buttons[key].set_title('True')
         elif key == 'apply':
-            # Collecting new user preferences and saving to disk
-            self.app.save_to_disk(self.get_preferences(), self.save_path)
-            
-            self.app.next_state("main_menu", self.perist)
+            configs = self.get_configurations()
+            user_config.save_settings(configs, self.save_path)
+            self.persist.update(configs)
+            self.app.next_state("main_menu", self.persist)
             self.app.set_window('main_menu', True)
         elif key == 'cancel':
-            self.load_preferences()
-            self.app.next_state('main_menu', self.perist)
+            # user_config.load_settings(self.save_path)
+            self.app.next_state('main_menu', self.persist)
             self.app.set_window('main_menu', True)
         else:
             pass
             
-    def get_preferences(self):
+    def get_configurations(self):
         preferences = {}
 
         # Assets state : Rune, Artifact
-        preferences['assets_state'] = self.buttons['assets'].text
+        preferences['assets'] = self.buttons['assets'].text
         
         # Navigation boxes state : True or False
         state = self.buttons['navigation_boxes'].text == 'True'
-        preferences['navigation_boxes_state'] = state
+        preferences['navigation_boxes'] = state
         
         # Efficiency multipliers : dict[str:str]
         preferences['efficiency_multipliers'] = {
-            key: tbox.text for key, tbox in self.text_boxes.items()
+            key: tbox.main for key, tbox in self.text_boxes.items()
         }
         
         # Efficiency default value state : True or False
         state = self.buttons['efficiency_default_value'].text == 'True'
         preferences['efficiency_default_value'] = state
-        
-        # Update persist
-        self.persist.update(preferences)
+
         return preferences
-        
-    def load_preferences(self):
-        # Assets state : Rune, Artifact
-        self.buttons['assets'].text = self.persist['assets_state']
-        
-        # Navigation boxes state : Show, Hide
-        state = str(self.persist['navigation_boxes_state'])
-        self.buttons['navigation_boxes'].text = state
-        
-        # Efficiency multipliers
-        for key, value in self.persist['efficiency_multipliers'].items():
-            self.text_boxes[key].text = value
-        
-        # Efficiency default value state : True or False
-        state = str(self.persist['efficiency_default_value'])
-        self.buttons['efficiency_default_value'].text = state
 
-    def rendering(self):
-        self.rendered_objs = []
-        
-        for _rect, text in SETTINGS_TEXTS_WITH_POS:
-            text_obj = SETTINGS_FONT.render(text, True, "Black")
-            
-            # Set rect size
-            _rect.size = text_obj.get_size()
-            
-            self.rendered_objs.append((text_obj, _rect))
-
-    def dispatch_event(self, e):
+    def dispatch_events(self, e):
         # Buttons events
         for button in self.buttons.values():
-            button.dispatch_event(e)
+            button.dispatch_events(e)
 
         for tbox in self.text_boxes.values():
-            tbox.dispatch_event(e)
+            tbox.dispatch_events(e)
  
         if e.type == pygame.QUIT:
             self.running = False
@@ -167,11 +147,9 @@ class Settings(GameState):
         
         for tbox in self.text_boxes.values():
             tbox.update()
-
-        self.rendering()
         
     def draw(self, screen):
-        screen.fill(BACKGROUND_COLOR)
+        screen.fill(BG_COLOR)
         
         for tbox in self.text_boxes.values():
             tbox.draw(screen)

@@ -1,4 +1,5 @@
 import pygame
+import pygame._sdl2 as pg_sdl2
 import json
 from constants import DISPLAY_SIZES
 
@@ -8,6 +9,7 @@ class App:
         """Initialize the app framework."""
         self.title = title
         self.screen = None
+        self.window = None
         pygame.display.set_caption(self.title)
         self.clock = pygame.time.Clock()
         self.fps = fps
@@ -19,7 +21,7 @@ class App:
         self._dt_max = 3 / fps
 
         pygame.init()
-
+        
     def next_state(self, state, persist):
         """Switch state.
 
@@ -41,30 +43,25 @@ class App:
         self._state.reset(persist)
     
     def set_window(self, state:str, resizable=False):
-        if self._state == self._states[state]:
+        # Restores the screen upon next load
+        if self.window is not None:
+            self.window.restore()
+            
+        if self._state is self._states[state]:
             if resizable:
                 self.screen = pygame.display.set_mode(DISPLAY_SIZES[state], pygame.RESIZABLE)
             else:
                 self.screen = pygame.display.set_mode(DISPLAY_SIZES[state])
+            
+            # Maximized the screen
+            if state == 'grind_manager':
+                self.window = pg_sdl2.Window.from_display_module()
+                self.window.maximize()
 
-    def save_to_disk(self, data, path):
-        with open(path, 'r') as file:
-            try:
-                old = json.load(file)
-                old.update(data)
-            except json.JSONDecodeError:
-                old = data
-        
-        with open(path, 'w') as file:
-            json.dump(old, file, indent=4)
-        
-    def load_from_disk(self, path):
-        pass
-        
     def dispatch_events(self):
         """Delegate events to current state."""
         for e in pygame.event.get():
-            self._state.dispatch_event(e)
+            self._state.dispatch_events(e)
 
     def update(self, dt):
         """Call update method of current state.
@@ -90,7 +87,7 @@ class App:
 
     def run(self, state, states):
         """The game loop."""
-
+        
         self._states = states
         self._state = self._states[state]
         

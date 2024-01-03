@@ -1,0 +1,63 @@
+{
+    "assets": "Rune",
+    "navigation_boxes": true,
+    "efficiency_default_value": true,
+    "is_set": true,
+    "efficiency_multipliers": {
+        "hp flat": 0.5,
+        "def flat": 0.5,
+        "atk flat": 0.5,
+        "hp": 1.0,
+        "def": 1.0,
+        "atk": 1.0,
+        "spd": 1.0,
+        "cri rate": 1.0,
+        "cri dmg": 1.0,
+        "accuracy": 1.0,
+        "resistance": 1.0
+    },
+    "window_rect_attribute": {
+        "pos_x": 195,
+        "pos_y": 506,
+        "width": 828,
+        "height": 863
+    },
+    "transparent_rect": {
+        "pos_x": 110,
+        "pos_y": 10,
+        "width": 513,
+        "height": 337
+    },
+    "navigation_rect_attributes": {
+        "title": {
+            "pos_x": 174,
+            "pos_y": 19,
+            "width": 384,
+            "height": 49
+        },
+        "main": {
+            "pos_x": 216,
+            "pos_y": 66,
+            "width": 213,
+            "height": 49
+        },
+        "innate": {
+            "pos_x": 216,
+            "pos_y": 113,
+            "width": 213,
+            "height": 44
+        },
+        "substats": {
+            "pos_x": 120,
+            "pos_y": 155,
+            "width": 213,
+            "height": 128
+        },
+        "grade": {
+            "pos_x": 470,
+            "pos_y": 78,
+            "width": 138,
+            "height": 29
+        }
+    }
+}

@@ -2,39 +2,33 @@ import pygame
 import pathlib
 import json
 
+import user_config
 from app import App
 from main_menu import MainMenu
-from rune import Rune
+from rune_manager import RuneManager
+from grind_manager import GrindManager
 from settings import Settings
-from constants import DEFAULT_PREFERENCES
-
-# Paths
-preferences_path = pathlib.Path().absolute() / "settings.json"
-rune_path = pathlib.Path().absolute() / "runes.json"
-persist = {}
-
-if not rune_path.exists():
-    rune_path.touch(exist_ok=True)
-if not preferences_path.exists():
-    preferences_path.touch(exist_ok=True)
-    
-# All this move to App class -> load from disk
-with open(rune_path, "r") as file:
-    try:
-        persist['runes'] = json.load(file)
-    except json.JSONDecodeError:
-        persist['runes'] = {}
-
-with open(preferences_path, "r+") as file:
-    try:
-        persist = json.load(file)
-    except json.JSONDecodeError:
-        json.dump(DEFAULT_PREFERENCES, file, indent=4)
-        persist = DEFAULT_PREFERENCES
 
 _app = App('Sw Tool', pygame.Rect(0, 0, 100, 100), 60)
-main_menu = MainMenu(_app, persist, preferences_path)
-rune = Rune(_app, persist, rune_path)
-settings = Settings(_app, persist, preferences_path)
 
-_app.run('main_menu', {'main_menu':main_menu, 'start':rune, 'settings':settings})
+# Paths
+config_path = pathlib.Path().absolute() / "settings.json"
+rune_path = pathlib.Path().absolute() / "runes.json"
+grind_path = pathlib.Path().absolute() / "grind.json"
+
+# Loading save data
+persist = {}
+persist['runes'] = user_config.load_runes(rune_path)
+persist.update(user_config.load_settings(config_path))
+main_menu = MainMenu(_app, persist, config_path)
+rune_manager = RuneManager(_app, persist, rune_path)
+grind_manager = GrindManager(_app, persist, grind_path)
+settings = Settings(_app, persist, config_path)
+
+_app.run('main_menu', {
+    'main_menu':main_menu, 
+    'settings':settings, 
+    'rune_manager':rune_manager,
+    'grind_manager':grind_manager,
+    }
+)
